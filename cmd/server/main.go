@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"go-test/internal/router"
 	"go-test/internal/store"
+	"go-test/internal/config"
 )
 
 func main() {
-	store.Init()
+	config.LoadConfig()
+	store.Init(config.AppConfig.Database.DSN)
 	r := router.SetupRouter()
-	fmt.Println("Server is running at http://localhost:8080")
-	r.Run(":8080")
+	addr := ":" + config.AppConfig.Server.Port
+	fmt.Printf("Server is running at http://localhost%s\n", addr)
+	r.Run(addr)
 }

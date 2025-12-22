@@ -1,0 +1,5 @@
+server:
+  port: "8080"  # 服务器端口
+
+database:
+  dsn: "test.db" # Data Source Name (数据库文件名)
