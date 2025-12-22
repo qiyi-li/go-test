@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"go-test/internal/router"
 	"go-test/internal/store"
-	"net/http"
 )
 
 func main() {
 	store.Init()
-	router.RegisterRoutes()
+	r := router.SetupRouter()
 	fmt.Println("Server is running at http://localhost:8080")
-	http.ListenAndServe(":8080", nil)
+	r.Run(":8080")
 }
