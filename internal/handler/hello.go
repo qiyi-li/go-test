@@ -3,7 +3,7 @@ package handler
 import (
 	"errors"
 	"fmt"
-	"go-test/internal/store"
+	"go-test/internal/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -20,12 +20,9 @@ func HelloHandler(c *gin.Context) {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
-	user := store.User{
-		Name: userInput.Name,
-	}
-	result := store.DB.Create(&user)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": result.Error.Error()})
+	user, err := service.CreateUser(userInput.Name)
+	if err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	fmt.Printf("✅ 新用户创建成功! 详细信息: %+v\n", user)
@@ -35,23 +32,21 @@ func HelloHandler(c *gin.Context) {
 func GetUserHandler(c *gin.Context) {
 	id := c.Param("id")
 	if id == "" {
-		var users []store.User
-		result := store.DB.Find(&users)
-		if result.Error != nil {
-			c.JSON(500, gin.H{"error": result.Error.Error()})
+		users, err := service.GetUser("")
+		if err != nil {
+			c.JSON(500, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(200, users)
 		return
 	}
-	var user store.User
-	result := store.DB.First(&user, id)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	user, err := service.GetUser(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(404, gin.H{"error": "用户不存在"})
 			return
 		}
-		c.JSON(500, gin.H{"error": result.Error.Error()})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(200, user)
@@ -69,22 +64,16 @@ func UpdateUserHandler(c *gin.Context) {
 	}
 	var userInput UserInput
 	c.ShouldBindJSON(&userInput)
-	var user store.User
-	result := store.DB.First(&user, id)
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	user, err := service.UpdateUser(id, userInput.Name)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(404, gin.H{"error": "用户不存在"})
 			return
 		}
-		c.JSON(500, gin.H{"error": result.Error.Error()})
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	user.Name = userInput.Name
-	result = store.DB.Model(&user).Updates(store.User{Name: userInput.Name})
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": result.Error.Error()})
-		return
-	}
 	c.JSON(200, user)
 }
 
@@ -98,9 +87,8 @@ func DeleteUserHandler(c *gin.Context) {
 		c.JSON(400, gin.H{"error": "id is required"})
 		return
 	}
-	result := store.DB.Delete(&store.User{}, id)
-	if result.Error != nil {
-		c.JSON(500, gin.H{"error": result.Error.Error()})
+	if err := service.DeleteUser(id); err != nil {
+		c.JSON(500, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(200, gin.H{"message": "用户已删除"})
