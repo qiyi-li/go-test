@@ -15,18 +15,25 @@ func CreateUser(name string) (*store.User, error) {
 
 func GetUser(id string) (*store.User, error) {
 	var user store.User
-	if id == ""{
-		var users []store.User
-		result := store.DB.Find(&users)
-		if result.Error != nil {
-			return nil, result.Error
-		}
-	}
 	result := store.DB.First(&user, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
 	return &user, nil
+}
+func GetUsers() ([]*store.User, error) {
+	var users []store.User
+	result := store.DB.Find(&users)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	// 将值切片转换为指针切片
+	userPtrs := make([]*store.User, len(users))
+	for i := range users {
+		userPtrs[i] = &users[i]
+	}
+	return userPtrs, nil
 }
 
 func UpdateUser(id string, newName string) (*store.User, error) {
